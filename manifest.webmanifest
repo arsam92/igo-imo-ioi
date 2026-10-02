@@ -1,0 +1,10 @@
+{
+  "name": "Chaos Soccer",
+  "short_name": "Chaos Soccer",
+  "start_url": "./",
+  "display": "fullscreen",
+  "background_color": "#07101c",
+  "theme_color": "#07101c",
+  "description": "2v2 physics-based ragdoll soccer brawl with 23 abilities.",
+  "icons": [{"src":"icon.svg","sizes":"any","type":"image/svg+xml"}]
+}
