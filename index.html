@@ -1,89 +1,1481 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
-  <meta name="theme-color" content="#07101c" />
-  <link rel="manifest" href="manifest.webmanifest" />
+  <meta charset="utf-8">
+  <meta name="viewport"
+        content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+
+  <meta name="theme-color" content="#07101c">
+
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+
   <title>Chaos Soccer — 2v2 Ragdoll Brawl</title>
+
   <style>
-    :root{--bg:#07101c;--glass:rgba(8,17,30,.72);--line:rgba(255,255,255,.12);--text:#eef7ff;--muted:#9fb0c4;--accent:#70e1ff}
-    *{box-sizing:border-box}
-    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--text);touch-action:none}
-    #app{position:fixed;inset:0}
-    canvas{display:block;width:100%;height:100%}
-    .screen{position:absolute;inset:0;display:none;align-items:center;justify-content:center;padding:24px;background:radial-gradient(circle at 50% 30%,rgba(32,86,120,.28),transparent 45%),linear-gradient(180deg,rgba(2,8,14,.35),rgba(2,8,14,.88));backdrop-filter:blur(9px);z-index:20}
-    .screen.active{display:flex}
-    .panel{width:min(920px,96vw);max-height:92vh;overflow:auto;border:1px solid var(--line);border-radius:28px;background:var(--glass);box-shadow:0 24px 80px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.06);padding:28px}
-    .title{font-size:clamp(38px,7vw,78px);line-height:.92;margin:0 0 10px;font-weight:900;letter-spacing:-.05em;text-shadow:0 8px 26px rgba(0,0,0,.55)}
-    .subtitle{color:var(--muted);margin:0 0 24px;font-size:15px}
-    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}.col{display:flex;flex-direction:column;gap:12px}
-    button,select,input{font:inherit;color:var(--text)}
-    button{border:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,.035));padding:13px 17px;border-radius:14px;cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,.18);transition:.18s transform,.18s background,.18s border-color}
-    button:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.26);background:linear-gradient(180deg,rgba(255,255,255,.15),rgba(255,255,255,.05))}
-    button.primary{background:linear-gradient(135deg,#43c7ff,#7c6cff);border-color:rgba(255,255,255,.26);font-weight:800}
-    button.danger{background:linear-gradient(135deg,#ff4d74,#9d3150)}
-    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.card{padding:15px;border-radius:18px;background:rgba(255,255,255,.045);border:1px solid var(--line)}
-    .pill{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:999px;background:rgba(255,255,255,.07);font-size:12px;color:#c9d5e5}
-    label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:6px;min-width:120px} select{background:#0d1b2b;border:1px solid var(--line);padding:11px;border-radius:11px}
-    .hud{position:absolute;inset:0;z-index:10;pointer-events:none}
-    #scorebar{position:absolute;left:50%;top:14px;transform:translateX(-50%);display:flex;align-items:center;gap:16px;padding:9px 15px;border:1px solid var(--line);border-radius:18px;background:rgba(6,14,24,.62);backdrop-filter:blur(14px);box-shadow:0 10px 34px rgba(0,0,0,.25)}
-    .team{min-width:86px;text-align:center;font-weight:800;font-size:13px}.team strong{display:block;font-size:30px;line-height:1}.blue{color:#55c7ff}.red{color:#ff6688}.timer{min-width:62px;text-align:center;font-variant-numeric:tabular-nums;font-weight:900;font-size:18px}
-    #playersHud{position:absolute;left:14px;top:14px;display:flex;flex-direction:column;gap:7px}.phud{min-width:218px;padding:9px 11px;border-radius:14px;border:1px solid var(--line);background:rgba(4,11,19,.54);backdrop-filter:blur(12px);font-size:12px}.phud .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}.meter{height:4px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden}.meter i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#69e6ff,#9f9cff);transition:width .1s}
-    #abilityHud{position:absolute;right:16px;bottom:16px;display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:17px;background:rgba(4,11,19,.58);backdrop-filter:blur(12px)}
-    #abilityIcon{width:58px;height:58px;border-radius:16px;display:grid;place-items:center;font-size:28px;background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.25),rgba(255,255,255,.06));border:2px solid #9f9cff;position:relative;overflow:hidden}.cool{position:absolute;inset:0;background:conic-gradient(rgba(0,0,0,.62) var(--cool,0deg),transparent 0);}
-    #goText{position:absolute;left:50%;top:17%;transform:translateX(-50%);font-size:clamp(48px,12vw,140px);font-weight:1000;letter-spacing:-.07em;text-shadow:0 10px 40px rgba(0,0,0,.65);opacity:0;transition:.22s;white-space:nowrap}.goTextShow{opacity:1;animation:pop .7s ease-out}@keyframes pop{0%{transform:translateX(-50%) scale(.6) rotate(-4deg)}45%{transform:translateX(-50%) scale(1.1) rotate(2deg)}100%{transform:translateX(-50%) scale(1) rotate(0)}}
-    #hint{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);font-size:12px;color:rgba(255,255,255,.68);background:rgba(4,11,19,.4);border:1px solid var(--line);padding:7px 10px;border-radius:999px}
-    #touchRoot{position:absolute;inset:0;z-index:30;display:none;pointer-events:none}.touchQuad{position:absolute;width:50%;height:50%;pointer-events:none}.touchQuad.q0{left:0;top:0}.touchQuad.q1{right:0;top:0}.touchQuad.q2{left:0;bottom:0}.touchQuad.q3{right:0;bottom:0}.touchStick{position:absolute;left:16px;bottom:16px;width:122px;height:122px;border-radius:50%;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.045);pointer-events:auto}.touchKnob{position:absolute;left:50%;top:50%;width:58px;height:58px;margin:-29px;border-radius:50%;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3)}.touchBtns{position:absolute;right:13px;bottom:16px;display:grid;grid-template-columns:repeat(2,56px);grid-auto-rows:56px;gap:8px;pointer-events:auto}.touchBtn{border-radius:50%;font-weight:900;background:rgba(9,16,27,.68)}.touchBtn.ability{grid-column:1/3;margin:auto;width:66px;height:66px;border-color:rgba(156,122,255,.6)}
-    #countdown{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;font-size:clamp(90px,18vw,210px);font-weight:1000;opacity:0;z-index:12;text-shadow:0 16px 50px rgba(0,0,0,.5)}
-    #flash{position:absolute;inset:0;background:rgba(255,255,255,.85);opacity:0;pointer-events:none;z-index:50;mix-blend-mode:screen}
-    .modeGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:20px 0}.modeCard{padding:14px;border:1px solid var(--line);border-radius:16px;text-align:left}.modeCard.active{border-color:#72c8ff;box-shadow:0 0 0 1px rgba(114,200,255,.25) inset}.modeCard b{display:block;margin-bottom:5px}.modeCard small{color:var(--muted)}
-    .settingsGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.tiny{font-size:11px;color:var(--muted)}
-    @media (max-width:900px){.grid,.settingsGrid{grid-template-columns:repeat(2,1fr)}.modeGrid{grid-template-columns:repeat(2,1fr)}#playersHud{display:none}.panel{padding:20px}}
-    @media (max-width:640px){.settingsGrid,.modeGrid{grid-template-columns:1fr}.touchable #touchRoot{display:block}.title{font-size:50px}.panel{border-radius:22px}.touchBtn{font-size:11px}}
-    body.touchable #hint{display:none}
-    .statGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}.stat{padding:12px;border-radius:14px;background:rgba(255,255,255,.045);border:1px solid var(--line);text-align:center}.stat b{font-size:24px;display:block}
+    :root {
+      --bg: #07101c;
+      --glass: rgba(8,17,30,.72);
+      --line: rgba(255,255,255,.12);
+      --text: #eef7ff;
+      --muted: #9fb0c4;
+      --accent: #70e1ff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      font-family:
+        Inter,
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Arial,
+        sans-serif;
+      color: var(--text);
+      touch-action: none;
+    }
+
+    #app {
+      position: fixed;
+      inset: 0;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .screen {
+      position: absolute;
+      inset: 0;
+
+      display: none;
+      align-items: center;
+      justify-content: center;
+
+      padding: 24px;
+
+      background:
+        radial-gradient(
+          circle at 50% 30%,
+          rgba(32,86,120,.28),
+          transparent 45%
+        ),
+        linear-gradient(
+          180deg,
+          rgba(2,8,14,.35),
+          rgba(2,8,14,.88)
+        );
+
+      backdrop-filter: blur(9px);
+
+      z-index: 20;
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    .panel {
+      width: min(920px, 96vw);
+      max-height: 92vh;
+      overflow: auto;
+
+      border: 1px solid var(--line);
+      border-radius: 28px;
+
+      background: var(--glass);
+
+      box-shadow:
+        0 24px 80px rgba(0,0,0,.42),
+        inset 0 1px 0 rgba(255,255,255,.06);
+
+      padding: 28px;
+    }
+
+    .title {
+      font-size: clamp(38px,7vw,78px);
+      line-height: .92;
+
+      margin: 0 0 10px;
+
+      font-weight: 900;
+      letter-spacing: -.05em;
+
+      text-shadow:
+        0 8px 26px rgba(0,0,0,.55);
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin: 0 0 24px;
+      font-size: 15px;
+    }
+
+    .row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .col {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    button,
+    select,
+    input {
+      font: inherit;
+      color: var(--text);
+    }
+
+    button {
+      border: 1px solid var(--line);
+
+      background:
+        linear-gradient(
+          180deg,
+          rgba(255,255,255,.1),
+          rgba(255,255,255,.035)
+        );
+
+      padding: 13px 17px;
+
+      border-radius: 14px;
+
+      cursor: pointer;
+
+      box-shadow:
+        0 8px 22px rgba(0,0,0,.18);
+
+      transition:
+        .18s transform,
+        .18s background,
+        .18s border-color;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+
+      border-color:
+        rgba(255,255,255,.26);
+
+      background:
+        linear-gradient(
+          180deg,
+          rgba(255,255,255,.15),
+          rgba(255,255,255,.05)
+        );
+    }
+
+    button.primary {
+      background:
+        linear-gradient(
+          135deg,
+          #43c7ff,
+          #7c6cff
+        );
+
+      border-color:
+        rgba(255,255,255,.26);
+
+      font-weight: 800;
+    }
+
+    button.danger {
+      background:
+        linear-gradient(
+          135deg,
+          #ff4d74,
+          #9d3150
+        );
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns:
+        repeat(4,1fr);
+      gap: 12px;
+    }
+
+    .card {
+      padding: 15px;
+
+      border-radius: 18px;
+
+      background:
+        rgba(255,255,255,.045);
+
+      border:
+        1px solid var(--line);
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+
+      padding: 6px 9px;
+
+      border-radius: 999px;
+
+      background:
+        rgba(255,255,255,.07);
+
+      font-size: 12px;
+
+      color: #c9d5e5;
+    }
+
+    label {
+      font-size: 12px;
+      color: var(--muted);
+
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+
+      min-width: 120px;
+    }
+
+    select {
+      background: #0d1b2b;
+
+      border:
+        1px solid var(--line);
+
+      padding: 11px;
+
+      border-radius: 11px;
+    }
+
+    .hud {
+      position: absolute;
+      inset: 0;
+
+      z-index: 10;
+
+      pointer-events: none;
+    }
+
+    #scorebar {
+      position: absolute;
+
+      left: 50%;
+      top: 14px;
+
+      transform: translateX(-50%);
+
+      display: flex;
+      align-items: center;
+      gap: 16px;
+
+      padding: 9px 15px;
+
+      border:
+        1px solid var(--line);
+
+      border-radius: 18px;
+
+      background:
+        rgba(6,14,24,.62);
+
+      backdrop-filter:
+        blur(14px);
+
+      box-shadow:
+        0 10px 34px rgba(0,0,0,.25);
+    }
+
+    .team {
+      min-width: 86px;
+      text-align: center;
+
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    .team strong {
+      display: block;
+
+      font-size: 30px;
+      line-height: 1;
+    }
+
+    .blue {
+      color: #55c7ff;
+    }
+
+    .red {
+      color: #ff6688;
+    }
+
+    .timer {
+      min-width: 62px;
+
+      text-align: center;
+
+      font-variant-numeric:
+        tabular-nums;
+
+      font-weight: 900;
+
+      font-size: 18px;
+    }
+
+    #playersHud {
+      position: absolute;
+
+      left: 14px;
+      top: 14px;
+
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .phud {
+      min-width: 218px;
+
+      padding: 9px 11px;
+
+      border-radius: 14px;
+
+      border:
+        1px solid var(--line);
+
+      background:
+        rgba(4,11,19,.54);
+
+      backdrop-filter:
+        blur(12px);
+
+      font-size: 12px;
+    }
+
+    .phud .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      margin-bottom: 7px;
+    }
+
+    .meter {
+      height: 4px;
+
+      background:
+        rgba(255,255,255,.08);
+
+      border-radius: 999px;
+
+      overflow: hidden;
+    }
+
+    .meter i {
+      display: block;
+
+      height: 100%;
+      width: 100%;
+
+      background:
+        linear-gradient(
+          90deg,
+          #69e6ff,
+          #9f9cff
+        );
+
+      transition:
+        width .1s;
+    }
+
+    #abilityHud {
+      position: absolute;
+
+      right: 16px;
+      bottom: 16px;
+
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      padding: 10px 12px;
+
+      border:
+        1px solid var(--line);
+
+      border-radius: 17px;
+
+      background:
+        rgba(4,11,19,.58);
+
+      backdrop-filter:
+        blur(12px);
+    }
+
+    #abilityIcon {
+      width: 58px;
+      height: 58px;
+
+      border-radius: 16px;
+
+      display: grid;
+      place-items: center;
+
+      font-size: 28px;
+
+      background:
+        radial-gradient(
+          circle at 30% 25%,
+          rgba(255,255,255,.25),
+          rgba(255,255,255,.06)
+        );
+
+      border:
+        2px solid #9f9cff;
+
+      position: relative;
+
+      overflow: hidden;
+    }
+
+    .cool {
+      position: absolute;
+      inset: 0;
+
+      background:
+        conic-gradient(
+          rgba(0,0,0,.62) var(--cool,0deg),
+          transparent 0
+        );
+    }
+
+    #goText {
+      position: absolute;
+
+      left: 50%;
+      top: 17%;
+
+      transform:
+        translateX(-50%);
+
+      font-size:
+        clamp(48px,12vw,140px);
+
+      font-weight: 1000;
+
+      letter-spacing: -.07em;
+
+      text-shadow:
+        0 10px 40px rgba(0,0,0,.65);
+
+      opacity: 0;
+
+      transition: .22s;
+
+      white-space: nowrap;
+    }
+
+    .goTextShow {
+      opacity: 1;
+
+      animation:
+        pop .7s ease-out;
+    }
+
+    @keyframes pop {
+      0% {
+        transform:
+          translateX(-50%)
+          scale(.6)
+          rotate(-4deg);
+      }
+
+      45% {
+        transform:
+          translateX(-50%)
+          scale(1.1)
+          rotate(2deg);
+      }
+
+      100% {
+        transform:
+          translateX(-50%)
+          scale(1)
+          rotate(0);
+      }
+    }
+
+    #hint {
+      position: absolute;
+
+      left: 50%;
+      bottom: 18px;
+
+      transform:
+        translateX(-50%);
+
+      font-size: 12px;
+
+      color:
+        rgba(255,255,255,.68);
+
+      background:
+        rgba(4,11,19,.4);
+
+      border:
+        1px solid var(--line);
+
+      padding:
+        7px 10px;
+
+      border-radius:
+        999px;
+    }
+
+    #touchRoot {
+      position: absolute;
+      inset: 0;
+
+      z-index: 30;
+
+      display: none;
+
+      pointer-events:
+        none;
+    }
+
+    .touchQuad {
+      position: absolute;
+
+      width: 50%;
+      height: 50%;
+
+      pointer-events:
+        none;
+    }
+
+    .touchQuad.q0 {
+      left: 0;
+      top: 0;
+    }
+
+    .touchQuad.q1 {
+      right: 0;
+      top: 0;
+    }
+
+    .touchQuad.q2 {
+      left: 0;
+      bottom: 0;
+    }
+
+    .touchQuad.q3 {
+      right: 0;
+      bottom: 0;
+    }
+
+    .touchStick {
+      position: absolute;
+
+      left: 16px;
+      bottom: 16px;
+
+      width: 122px;
+      height: 122px;
+
+      border-radius: 50%;
+
+      border:
+        1px solid rgba(255,255,255,.16);
+
+      background:
+        rgba(255,255,255,.045);
+
+      pointer-events:
+        auto;
+    }
+
+    .touchKnob {
+      position: absolute;
+
+      left: 50%;
+      top: 50%;
+
+      width: 58px;
+      height: 58px;
+
+      margin: -29px;
+
+      border-radius: 50%;
+
+      background:
+        rgba(255,255,255,.14);
+
+      border:
+        1px solid rgba(255,255,255,.3);
+    }
+
+    .touchBtns {
+      position: absolute;
+
+      right: 13px;
+      bottom: 16px;
+
+      display: grid;
+
+      grid-template-columns:
+        repeat(2,56px);
+
+      grid-auto-rows:
+        56px;
+
+      gap: 8px;
+
+      pointer-events:
+        auto;
+    }
+
+    .touchBtn {
+      border-radius: 50%;
+
+      font-weight: 900;
+
+      background:
+        rgba(9,16,27,.68);
+    }
+
+    .touchBtn.ability {
+      grid-column:
+        1 / 3;
+
+      margin: auto;
+
+      width: 66px;
+      height: 66px;
+
+      border-color:
+        rgba(156,122,255,.6);
+    }
+
+    #countdown {
+      position: absolute;
+      inset: 0;
+
+      display: grid;
+      place-items: center;
+
+      pointer-events: none;
+
+      font-size:
+        clamp(90px,18vw,210px);
+
+      font-weight: 1000;
+
+      opacity: 0;
+
+      z-index: 12;
+
+      text-shadow:
+        0 16px 50px rgba(0,0,0,.5);
+    }
+
+    #flash {
+      position: absolute;
+      inset: 0;
+
+      background:
+        rgba(255,255,255,.85);
+
+      opacity: 0;
+
+      pointer-events: none;
+
+      z-index: 50;
+
+      mix-blend-mode:
+        screen;
+    }
+
+    .modeGrid {
+      display: grid;
+
+      grid-template-columns:
+        repeat(3,1fr);
+
+      gap: 10px;
+
+      margin: 20px 0;
+    }
+
+    .modeCard {
+      padding: 14px;
+
+      border:
+        1px solid var(--line);
+
+      border-radius: 16px;
+
+      text-align: left;
+    }
+
+    .modeCard.active {
+      border-color:
+        #72c8ff;
+
+      box-shadow:
+        0 0 0 1px
+        rgba(114,200,255,.25)
+        inset;
+    }
+
+    .modeCard b {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .modeCard small {
+      color:
+        var(--muted);
+    }
+
+    .settingsGrid {
+      display: grid;
+
+      grid-template-columns:
+        repeat(3,1fr);
+
+      gap: 12px;
+    }
+
+    .tiny {
+      font-size: 11px;
+
+      color:
+        var(--muted);
+    }
+
+    @media (max-width:900px) {
+      .grid,
+      .settingsGrid {
+        grid-template-columns:
+          repeat(2,1fr);
+      }
+
+      .modeGrid {
+        grid-template-columns:
+          repeat(2,1fr);
+      }
+
+      #playersHud {
+        display: none;
+      }
+
+      .panel {
+        padding: 20px;
+      }
+    }
+
+    @media (max-width:640px) {
+      .settingsGrid,
+      .modeGrid {
+        grid-template-columns: 1fr;
+      }
+
+      .touchable #touchRoot {
+        display: block;
+      }
+
+      .title {
+        font-size: 50px;
+      }
+
+      .panel {
+        border-radius: 22px;
+      }
+
+      .touchBtn {
+        font-size: 11px;
+      }
+    }
+
+    body.touchable #hint {
+      display: none;
+    }
+
+    .statGrid {
+      display: grid;
+
+      grid-template-columns:
+        repeat(4,1fr);
+
+      gap: 10px;
+
+      margin: 14px 0;
+    }
+
+    .stat {
+      padding: 12px;
+
+      border-radius: 14px;
+
+      background:
+        rgba(255,255,255,.045);
+
+      border:
+        1px solid var(--line);
+
+      text-align: center;
+    }
+
+    .stat b {
+      font-size: 24px;
+
+      display: block;
+    }
   </style>
 </head>
+
 <body>
+
 <div id="app">
+
+  <!-- HUD -->
+
   <div id="hud" class="hud" hidden>
-    <div id="scorebar"><div class="team blue">BLUE<strong id="blueScore">0</strong></div><div id="timer" class="timer">1:30</div><div class="team red">RED<strong id="redScore">0</strong></div></div>
+
+    <div id="scorebar">
+
+      <div class="team blue">
+        BLUE
+        <strong id="blueScore">0</strong>
+      </div>
+
+      <div id="timer" class="timer">
+        1:30
+      </div>
+
+      <div class="team red">
+        RED
+        <strong id="redScore">0</strong>
+      </div>
+
+    </div>
+
     <div id="playersHud"></div>
-    <div id="abilityHud"><div id="abilityIcon">⚡<div id="coolOverlay" class="cool"></div></div><div><b id="abilityName">—</b><div class="tiny" id="abilityMeta">READY • Q</div></div></div>
-    <div id="goText">GOAL!</div><div id="hint">Keyboard: P1 WASD • P2 Arrows • P3 IJKL • P4 Numpad</div>
+
+    <div id="abilityHud">
+
+      <div id="abilityIcon">
+        ⚡
+        <div
+          id="coolOverlay"
+          class="cool">
+        </div>
+      </div>
+
+      <div>
+        <b id="abilityName">—</b>
+
+        <div
+          class="tiny"
+          id="abilityMeta">
+          READY • Q
+        </div>
+      </div>
+
+    </div>
+
+    <div id="goText">
+      GOAL!
+    </div>
+
+    <div id="hint">
+      Keyboard:
+      P1 WASD •
+      P2 Arrows •
+      P3 IJKL •
+      P4 Numpad
+    </div>
+
   </div>
-  <div id="countdown"></div><div id="flash"></div>
+
+
+  <!-- COUNTDOWN -->
+
+  <div id="countdown"></div>
+
+  <div id="flash"></div>
+
+
+  <!-- TOUCH -->
+
   <div id="touchRoot"></div>
 
-  <section id="menu" class="screen active"><div class="panel">
-    <h1 class="title">CHAOS<br>SOCCER</h1><p class="subtitle">2v2 physics brawl • ragdoll chaos • 23 abilities • 4 players on one device</p>
-    <div class="modeGrid" id="modeGrid"></div>
-    <div class="row"><button id="startBtn" class="primary">▶ Start Match</button><button id="practiceBtn">⚽ Practice</button><button id="settingsBtn">⚙ Settings</button><button id="controlsBtn">🎮 Controls</button><button id="devBtn">🧪 Dev / God</button></div>
-    <p class="tiny" style="margin-top:16px">No login • no backend • no paid APIs. Open via localhost/HTTPS for PWA features.</p>
-  </div></section>
 
-  <section id="settings" class="screen"><div class="panel"><h2>Settings</h2><div class="settingsGrid">
-    <label>Match length<select id="setLength"><option value="90">90 sec</option><option value="60">60 sec</option><option value="120">120 sec</option></select></label>
-    <label>Weather<select id="setWeather"><option value="clear">Clear</option><option value="rain">Rain</option><option value="snow">Snow</option><option value="night">Night + Floodlights</option></select></label>
-    <label>Graphics<select id="setGraphics"><option>Medium</option><option>Low</option><option>High</option><option>Ultra</option></select></label>
-    <label>Camera shake<select id="setShake"><option value="1">On</option><option value="0">Off</option></select></label>
-    <label>Master volume<input id="setVolume" type="range" min="0" max="1" step="0.05" value="0.65"></label>
-    <label>FPS cap<select id="setFps"><option value="0">Unlocked</option><option value="60">60</option><option value="120">120</option></select></label>
-  </div><div class="row" style="margin-top:20px"><button id="settingsBack" class="primary">Done</button></div></div></section>
+  <!-- MAIN MENU -->
 
-  <section id="controls" class="screen"><div class="panel"><h2>Controls</h2><div class="grid">
-    <div class="card"><b>P1</b><p class="tiny">WASD move<br>Space jump<br>F kick<br>Q ability</p></div><div class="card"><b>P2</b><p class="tiny">↑←↓→ move<br>Right Shift jump<br>. kick<br>/ ability</p></div><div class="card"><b>P3</b><p class="tiny">IJKL move<br>U jump<br>O kick<br>P ability</p></div><div class="card"><b>P4</b><p class="tiny">Num 8/4/5/6 move<br>Num 0 jump<br>Num . kick<br>Num 1 ability</p></div>
-  </div><p style="color:var(--muted);margin-top:18px">Gamepads: left stick, A jump, B kick, Y ability, Start pause. Touch: split screen into four quadrants with independent joysticks and buttons.</p><div class="row"><button id="controlsBack" class="primary">Back</button></div></div></section>
+  <section
+    id="menu"
+    class="screen active">
 
-  <section id="dev" class="screen"><div class="panel"><h2>Dev / God Mode</h2><p class="subtitle">Reveal the entire pool and force any ability. This is intentionally available from the menu for testing and balancing.</p><div id="devGrid" class="grid"></div><div class="row" style="margin-top:18px"><button id="devBack" class="primary">Back</button></div></div></section>
+    <div class="panel">
 
-  <section id="draft" class="screen"><div class="panel"><h2>Character Draft</h2><p class="subtitle">Each player gets 3 random abilities. Pick one card per player, then launch.</p><div id="draftGrid" class="grid"></div><div class="row" style="margin-top:18px"><button id="draftAuto">Auto Pick Remaining</button><button id="draftLaunch" class="primary" disabled>Launch Match</button></div></div></section>
+      <h1 class="title">
+        CHAOS<br>
+        SOCCER
+      </h1>
 
-  <section id="pause" class="screen"><div class="panel"><h2>Paused</h2><p class="subtitle">The arena is frozen. Resume when ready.</p><div class="row"><button id="resumeBtn" class="primary">▶ Resume</button><button id="pauseMenuBtn">⌂ Main Menu</button></div></div></section>
+      <p class="subtitle">
+        2v2 physics brawl •
+        ragdoll chaos •
+        23 abilities •
+        4 players on one device
+      </p>
 
-  <section id="victory" class="screen"><div class="panel"><h2 id="victoryTitle">BLUE WINS!</h2><p id="victorySub" class="subtitle">Final score</p><div class="statGrid" id="victoryStats"></div><div class="row"><button id="rematchBtn" class="primary">↻ Rematch</button><button id="menuBtn">⌂ Main Menu</button></div></div></section>
+      <div
+        class="modeGrid"
+        id="modeGrid">
+      </div>
+
+      <div class="row">
+
+        <button
+          id="startBtn"
+          class="primary">
+          ▶ Start Match
+        </button>
+
+        <button
+          id="practiceBtn">
+          ⚽ Practice
+        </button>
+
+        <button
+          id="settingsBtn">
+          ⚙ Settings
+        </button>
+
+        <button
+          id="controlsBtn">
+          🎮 Controls
+        </button>
+
+        <button
+          id="devBtn">
+          🧪 Dev / God
+        </button>
+
+      </div>
+
+      <p
+        class="tiny"
+        style="margin-top:16px">
+
+        No login •
+        no backend •
+        no paid APIs.
+
+        Open via localhost/HTTPS
+        for PWA features.
+
+      </p>
+
+    </div>
+
+  </section>
+
+
+  <!-- SETTINGS -->
+
+  <section
+    id="settings"
+    class="screen">
+
+    <div class="panel">
+
+      <h2>
+        Settings
+      </h2>
+
+      <div class="settingsGrid">
+
+        <label>
+          Match length
+
+          <select id="setLength">
+            <option value="90">
+              90 sec
+            </option>
+
+            <option value="60">
+              60 sec
+            </option>
+
+            <option value="120">
+              120 sec
+            </option>
+          </select>
+
+        </label>
+
+
+        <label>
+          Weather
+
+          <select id="setWeather">
+
+            <option value="clear">
+              Clear
+            </option>
+
+            <option value="rain">
+              Rain
+            </option>
+
+            <option value="snow">
+              Snow
+            </option>
+
+            <option value="night">
+              Night + Floodlights
+            </option>
+
+          </select>
+
+        </label>
+
+
+        <label>
+          Graphics
+
+          <select id="setGraphics">
+
+            <option>
+              Medium
+            </option>
+
+            <option>
+              Low
+            </option>
+
+            <option>
+              High
+            </option>
+
+            <option>
+              Ultra
+            </option>
+
+          </select>
+
+        </label>
+
+
+        <label>
+          Camera shake
+
+          <select id="setShake">
+
+            <option value="1">
+              On
+            </option>
+
+            <option value="0">
+              Off
+            </option>
+
+          </select>
+
+        </label>
+
+
+        <label>
+          Master volume
+
+          <input
+            id="setVolume"
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value="0.65">
+        </label>
+
+
+        <label>
+          FPS cap
+
+          <select id="setFps">
+
+            <option value="0">
+              Unlocked
+            </option>
+
+            <option value="60">
+              60
+            </option>
+
+            <option value="120">
+              120
+            </option>
+
+          </select>
+
+        </label>
+
+      </div>
+
+
+      <div
+        class="row"
+        style="margin-top:20px">
+
+        <button
+          id="settingsBack"
+          class="primary">
+
+          Done
+
+        </button>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- CONTROLS -->
+
+  <section
+    id="controls"
+    class="screen">
+
+    <div class="panel">
+
+      <h2>
+        Controls
+      </h2>
+
+      <div class="grid">
+
+        <div class="card">
+
+          <b>
+            P1
+          </b>
+
+          <p class="tiny">
+
+            WASD move<br>
+            Space jump<br>
+            F kick<br>
+            Q ability
+
+          </p>
+
+        </div>
+
+
+        <div class="card">
+
+          <b>
+            P2
+          </b>
+
+          <p class="tiny">
+
+            ↑←↓→ move<br>
+            Right Shift jump<br>
+            . kick<br>
+            / ability
+
+          </p>
+
+        </div>
+
+
+        <div class="card">
+
+          <b>
+            P3
+          </b>
+
+          <p class="tiny">
+
+            IJKL move<br>
+            U jump<br>
+            O kick<br>
+            P ability
+
+          </p>
+
+        </div>
+
+
+        <div class="card">
+
+          <b>
+            P4
+          </b>
+
+          <p class="tiny">
+
+            Num 8/4/5/6 move<br>
+            Num 0 jump<br>
+            Num . kick<br>
+            Num 1 ability
+
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <p style="color:var(--muted);margin-top:18px">
+
+        Gamepads:
+        left stick,
+        A jump,
+        B kick,
+        Y ability,
+        Start pause.
+
+        Touch:
+        split screen into four
+        quadrants with independent
+        joysticks and buttons.
+
+      </p>
+
+
+      <div class="row">
+
+        <button
+          id="controlsBack"
+          class="primary">
+
+          Back
+
+        </button>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- DEV -->
+
+  <section
+    id="dev"
+    class="screen">
+
+    <div class="panel">
+
+      <h2>
+        Dev / God Mode
+      </h2>
+
+      <p class="subtitle">
+
+        Reveal the entire pool and
+        force any ability.
+
+      </p>
+
+      <div
+        id="devGrid"
+        class="grid">
+      </div>
+
+
+      <div
+        class="row"
+        style="margin-top:18px">
+
+        <button
+          id="devBack"
+          class="primary">
+
+          Back
+
+        </button>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- DRAFT -->
+
+  <section
+    id="draft"
+    class="screen">
+
+    <div class="panel">
+
+      <h2>
+        Character Draft
+      </h2>
+
+      <p class="subtitle">
+
+        Each player gets 3 random
+        abilities.
+
+      </p>
+
+      <div
+        id="draftGrid"
+        class="grid">
+      </div>
+
+
+      <div
+        class="row"
+        style="margin-top:18px">
+
+        <button id="draftAuto">
+          Auto Pick Remaining
+        </button>
+
+        <button
+          id="draftLaunch"
+          class="primary"
+          disabled>
+
+          Launch Match
+
+        </button>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- PAUSE -->
+
+  <section
+    id="pause"
+    class="screen">
+
+    <div class="panel">
+
+      <h2>
+        Paused
+      </h2>
+
+      <p class="subtitle">
+
+        The arena is frozen.
+        Resume when ready.
+
+      </p>
+
+
+      <div class="row">
+
+        <button
+          id="resumeBtn"
+          class="primary">
+
+          ▶ Resume
+
+        </button>
+
+        <button id="pauseMenuBtn">
+
+          ⌂ Main Menu
+
+        </button>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- VICTORY -->
+
+  <section
+    id="victory"
+    class="screen">
+
+    <div class="panel">
+
+      <h2 id="victoryTitle">
+        BLUE WINS!
+      </h2>
+
+      <p
+        id="victorySub"
+        class="subtitle">
+
+        Final score
+
+      </p>
+
+      <div
+        class="statGrid"
+        id="victoryStats">
+      </div>
+
+
+      <div class="row">
+
+        <button
+          id="rematchBtn"
+          class="primary">
+
+          ↻ Rematch
+
+        </button>
+
+        <button id="menuBtn">
+
+          ⌂ Main Menu
+
+        </button>
+
+      </div>
+
+    </div>
+
+  </section>
+
 </div>
-<script type="module" src="game.js"></script>
+
+
+<!-- GAME JAVASCRIPT -->
+
+<script
+  type="module"
+  src="game.js">
+</script>
+
 </body>
 </html>
